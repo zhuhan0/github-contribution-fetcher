@@ -1,6 +1,6 @@
 var queryButton = document.getElementById('query-button');
 var userName;
-var token = '2a195b7a8dea4f0b7779d48c3e8c2fd65b79811b';
+var token = 'cc0d862337b750050b5711afaba9110cd5e4c7a4';
 var contributions = new Array(365).fill(0);
 var yearAgo = new Date();
 yearAgo.setDate(yearAgo.getDate() - 365);
@@ -65,6 +65,7 @@ function parseIssues(responseText) {
 		if (date >= yearAgo) {
 			var index = Math.floor((date - yearAgo) / (1000 * 60 * 60 * 24));
 			contributions[index]++;
+			console.log(issue);
 		}
 	}
 }
