@@ -3,7 +3,7 @@ var userName;
 var token = '';
 var contributions = new Array(365);
 for (var i = 0; i < contributions.length; i++) {
-	contributions[i] = new Array(4).fill(0);
+	contributions[i] = new Array(3).fill(0);
 }
 var yearAgo = new Date();
 yearAgo.setDate(yearAgo.getDate() - 365);
@@ -26,7 +26,7 @@ queryButton.onclick = function(e) {
 	var queryForm = document.getElementById('query-form');
 	userName = queryForm.elements[0].value;
 
-	request.open('GET', 'https://api.github.com/users/' + userName + '/repos');
+	request.open('GET', 'https://api.github.com/users/' + userName + '/repos?type=all');
 	// request.open('GET', 'https://api.github.com/repos/cit-upenn/cit-591-projects-fall-2016-happy_hour_go/pulls?state=all');
 	// request.open('GET', 'https://api.github.com/repos/cit-upenn/cit-591-projects-fall-2016-happy_hour_go/commits?author=zhuhan0');
 	request.setRequestHeader('Authorization', 'token ' + token);
@@ -38,8 +38,8 @@ function parseRepos(responseText) {
 	for (var i = 0; i < response.length; i++) {
 		var repo = response[i];
 		if (!repo.fork) {
-			console.log(repo.name);
 			queryIssues(repo.owner.login, repo.name);
+			queryCommits(repo.owner.login, repo.name);
 		}
 	}
 }
@@ -56,7 +56,7 @@ function queryIssues(owner, repo) {
 		}
 	}
 
-	request.open('GET', 'https://api.github.com/repos/' + owner + '/' + repo + '/issues?creator=' + userName + '&state=all', false);
+	request.open('GET', 'https://api.github.com/repos/' + owner + '/' + repo + '/issues?creator=' + userName + '&since=' + yearAgo.toISOString() + '&state=all', false);
 	request.setRequestHeader('Authorization', 'token ' + token);
 	request.send();
 }
@@ -66,9 +66,42 @@ function parseIssues(responseText) {
 	for (var i = 0; i < response.length; i++) {
 		var issue = response[i];
 		var date = new Date(issue.created_at);
-		if (date >= yearAgo) {
-			var index = Math.floor((date - yearAgo) / (1000 * 60 * 60 * 24));
-			contributions[index][0]++;
+		var index = Math.floor((date - yearAgo) / (1000 * 60 * 60 * 24));
+		if (index >= 0) {
+			if (issue.hasOwnProperty('pull_request')) {
+				contributions[index][2]++;
+			} else {
+				contributions[index][0]++;
+			}
+		}
+	}
+}
+
+function queryCommits(owner, repo) {
+	var request = new XMLHttpRequest();
+	request.onreadystatechange = function() {
+		if (request.readyState === 4) {
+			if (request.status === 200) {
+				parseCommits(request.response);
+			} else {
+				console.error("Error querying commits: ", request.status);
+			}
+		}
+	}
+
+	request.open('GET', 'https://api.github.com/repos/' + owner + '/' + repo + '/commits?author=' + userName + '&since=' + yearAgo.toISOString(), false);
+	request.setRequestHeader('Authorization', 'token ' + token);
+	request.send();
+}
+
+function parseCommits(responseText) {
+	var response = JSON.parse(responseText);
+	for (var i = 0; i < response.length; i++) {
+		var commit = response[i];
+		var date = new Date(commit.commit.author.date);
+		var index = Math.floor((date - yearAgo) / (1000 * 60 * 60 * 24));
+		if (index >= 0) {
+			contributions[index][1]++;
 		}
 	}
 }
@@ -81,7 +114,7 @@ function displayContributions() {
 	
 	var body = document.createElement('tbody');
 	var date = new Date();
-	for (var i = 0; i < 365; i++) {
+	for (var i = 364; i >= 0; i--) {
 		var row = document.createElement('tr');
 		var cell0 = document.createElement('td');
 		date = new Date(date);
