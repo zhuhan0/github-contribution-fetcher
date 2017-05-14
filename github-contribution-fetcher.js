@@ -1,7 +1,10 @@
 var queryButton = document.getElementById('query-button');
 var userName;
-var token = 'cc0d862337b750050b5711afaba9110cd5e4c7a4';
-var contributions = new Array(365).fill(0);
+var token = '';
+var contributions = new Array(365);
+for (var i = 0; i < contributions.length; i++) {
+	contributions[i] = new Array(4).fill(0);
+}
 var yearAgo = new Date();
 yearAgo.setDate(yearAgo.getDate() - 365);
 
@@ -13,6 +16,7 @@ queryButton.onclick = function(e) {
 		if (request.readyState === 4) {
 			if (request.status === 200) {
 				parseRepos(request.response);
+				displayContributions();
 			} else {
 				console.error('Error querying repos: ', request.status);
 			}
@@ -27,7 +31,7 @@ queryButton.onclick = function(e) {
 	// request.open('GET', 'https://api.github.com/repos/cit-upenn/cit-591-projects-fall-2016-happy_hour_go/commits?author=zhuhan0');
 	request.setRequestHeader('Authorization', 'token ' + token);
 	request.send();
-};
+}
 
 function parseRepos(responseText) {
 	var response = JSON.parse(responseText);
@@ -52,7 +56,7 @@ function queryIssues(owner, repo) {
 		}
 	}
 
-	request.open('GET', 'https://api.github.com/repos/' + owner + '/' + repo + '/issues?creator=' + userName + '&state=all');
+	request.open('GET', 'https://api.github.com/repos/' + owner + '/' + repo + '/issues?creator=' + userName + '&state=all', false);
 	request.setRequestHeader('Authorization', 'token ' + token);
 	request.send();
 }
@@ -64,9 +68,63 @@ function parseIssues(responseText) {
 		var date = new Date(issue.created_at);
 		if (date >= yearAgo) {
 			var index = Math.floor((date - yearAgo) / (1000 * 60 * 60 * 24));
-			contributions[index]++;
-			console.log(issue);
+			contributions[index][0]++;
 		}
 	}
 }
 
+function displayContributions() {
+	var resultDiv = document.getElementById('result-div');
+	var table = document.createElement('table');
+	table.classList.add('table');
+	createHeader(table);
+	
+	var body = document.createElement('tbody');
+	var date = new Date();
+	for (var i = 0; i < 365; i++) {
+		var row = document.createElement('tr');
+		var cell0 = document.createElement('td');
+		date = new Date(date);
+		cell0.innerHTML = date.toDateString();
+		date -= 1000 * 60 * 60 * 24;
+		row.appendChild(cell0);
+
+		for (var j = 0; j < 4; j++) {
+			var cell = document.createElement('td');
+			if (j === 3) {
+				cell.innerHTML = contributions[i][0] + contributions[i][1] + contributions[i][2];
+			} else {
+				cell.innerHTML = contributions[i][j];
+			}
+			row.appendChild(cell);
+		}
+
+		body.appendChild(row);
+	}
+
+	table.appendChild(body);
+	resultDiv.appendChild(table);
+}
+
+function createHeader(table) {
+	var header = document.createElement('thead');
+	var row = document.createElement('tr');
+	var headerCells = [];
+
+	for (var i = 0; i < 5; i++) {
+		headerCells[i] = document.createElement('th');
+	}
+
+	headerCells[0].innerHTML = 'Date';
+	headerCells[1].innerHTML = 'Issues';
+	headerCells[2].innerHTML = 'Commits';
+	headerCells[3].innerHTML = 'Pull Requests';
+	headerCells[4].innerHTML = 'Total';
+
+	for (var i = 0; i < 5; i++) {
+		row.appendChild(headerCells[i]);
+	}
+
+	header.appendChild(row);
+	table.appendChild(header);
+}
