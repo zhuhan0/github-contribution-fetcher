@@ -27,8 +27,6 @@ queryButton.onclick = function(e) {
 	userName = queryForm.elements[0].value;
 
 	request.open('GET', 'https://api.github.com/users/' + userName + '/repos?type=all');
-	// request.open('GET', 'https://api.github.com/repos/cit-upenn/cit-591-projects-fall-2016-happy_hour_go/pulls?state=all');
-	// request.open('GET', 'https://api.github.com/repos/cit-upenn/cit-591-projects-fall-2016-happy_hour_go/commits?author=zhuhan0');
 	request.setRequestHeader('Authorization', 'token ' + token);
 	request.send();
 }
